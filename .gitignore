@@ -1,5 +1,7 @@
 node_modules/
+github-ai-review.txt
 
+output/
 # General
 .DS_Store
 .AppleDouble

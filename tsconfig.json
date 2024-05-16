@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "outDir": "./output", // Output directory for compiled files
+    "rootDir": "./", // Root directory of your source files is the current directory
+    "target": "ESNext", // Or "ES2015" or "ES6"
+    "module": "commonjs",
+    "strict": false,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
