@@ -8,7 +8,6 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_USERNAME = process.env.GITHUB_USERNAME;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-
 // GitHub API endpoint for pull requests assigned to the user
 const GITHUB_API_URL = `https://api.github.com/search/issues?q=type:pr+assignee:${GITHUB_USERNAME}+state:open`;
 
@@ -44,15 +43,17 @@ const getAssignedPullRequests = async () => {
     }
 };
 
-// Function to get the code diff of a pull request by PR number
-const getPullRequestDiff = async (owner: string, repo: string, prNumber: number) => {
+// Function to get the code diff of a pull request by PR number along with the PR details
+const getPullRequestDetails = async (owner: string, repo: string, prNumber: number) => {
     try {
         const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
-        const response = await axios.get(url, { headers: diffHeaders });
-        return response.data;
+        const response = await axios.get(url, { headers });
+        const pullRequest = response.data;
+        const diffResponse = await axios.get(pullRequest.diff_url, { headers: diffHeaders });
+        return { title: pullRequest.title, body: pullRequest.body, diff: diffResponse.data };
     } catch (error) {
-        console.error(`Error fetching pull request diff for PR #${prNumber}:`, error.response ? error.response.data : error.message);
-        return '';
+        console.error(`Error fetching pull request details for PR #${prNumber}:`, error.response ? error.response.data : error.message);
+        return null;
     }
 };
 
@@ -86,7 +87,7 @@ const approveAndCommentOnPullRequest = async (owner: string, repo: string, prNum
 };
 
 // Function to send the diff to OpenAI for code review
-const getCodeReviewFromOpenAI = async (diff: string) => {
+const getCodeReviewFromOpenAI = async (title: string, body: string, diff: string) => {
     try {
         const response = await openai.chat.completions.create({
             model: 'gpt-3.5-turbo',
@@ -107,6 +108,12 @@ const getCodeReviewFromOpenAI = async (diff: string) => {
 
                     If the PR contains potential bugs, please highlight them in a designated 'Bug' section.
                     Show only highly relevant suggestions and improvements in the 'Improvement' section.
+
+                    PR Title:
+                    ${title}
+
+                    PR Description:
+                    ${body}
 
                     Code Diff:
                     ${diff}
@@ -149,12 +156,16 @@ const checkForNewPullRequests = async () => {
                 const repoUrl = pr.repository_url;
                 const [owner, repo] = repoUrl.split('/').slice(-2);
 
-                // Get and print the code diff
-                const diff = await getPullRequestDiff(owner, repo, prNumber);
-                // console.log('Code Diff:\n', diff);
+                // Get the PR details including the diff
+                const prDetails = await getPullRequestDetails(owner, repo, prNumber);
+                if (!prDetails) {
+                    continue;
+                }
+
+                const { title, body, diff } = prDetails;
 
                 // Get code review from OpenAI
-                const codeReview = await getCodeReviewFromOpenAI(diff);
+                const codeReview = await getCodeReviewFromOpenAI(title, body, diff);
                 console.log(chalk.magenta("====================================="));
                 console.log(chalk.magenta('Code Review:\n'), codeReview);
 
@@ -174,7 +185,7 @@ const checkForNewPullRequests = async () => {
             }
         }
 
-        // Wait for 30 seconds minutes before checking again
+        // Wait for 30 seconds before checking again
         await new Promise(resolve => setTimeout(resolve, 60000));
     }
 };
