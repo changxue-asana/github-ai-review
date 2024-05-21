@@ -48,11 +48,30 @@ const getPullRequestDetails = async (owner: string, repo: string, prNumber: numb
     try {
         const url = `https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}`;
         const response = await axios.get(url, { headers });
+
+        if (response.status !== 200) {
+            throw new Error(`[Error] GitHub PR request: received status code ${response.status}`);
+        }
+
         const pullRequest = response.data;
-        const diffResponse = await axios.get(pullRequest.diff_url, { headers: diffHeaders });
+        const diffResponse = await axios.get(url, { headers: diffHeaders });
+
+        if (diffResponse.status !== 200) {
+            throw new Error(`[Error] GitHub PR diff request: received status code ${diffResponse.status}`);
+        }
+
         return { title: pullRequest.title, body: pullRequest.body, diff: diffResponse.data };
+
     } catch (error) {
-        console.error(`Error fetching pull request details for PR #${prNumber}:`, error.response ? error.response.data : error.message);
+        if (error.response) {
+            console.error(`[Error] Response data: ${JSON.stringify(error.response.data)}`);
+            console.error(`[Error] Response status: ${error.response.status}`);
+            console.error(`[Error] Response headers: ${JSON.stringify(error.response.headers)}`);
+        } else if (error.request) {
+            console.error(`[Error] No response received: ${JSON.stringify(error.request)}`);
+        } else {
+            console.error(`[Error] Error message: ${error.message}`);
+        }
         return null;
     }
 };
@@ -102,7 +121,7 @@ const getCodeReviewFromOpenAI = async (title: string, body: string, diff: string
                     Please assist me with a code review for this PR, focusing on the following aspects:
 
                     1. Clearly outline the intentions of the PR.
-                    2. Assess the risk level of the PR based on the impact of the changes, using the following scale: very low, low, medium-low, medium, medium-high, high, very high. Identify and highlight any risky code changes. Output the risk level as **Risk Level:** [level].
+                    2. Assess the risk level of the PR based on the impact of the changes, using the following scale: very low, low, medium-low, medium, medium-high, high, very high. Identify and highlight any risky code changes. Output the risk level as Risk Level: [level].
                         2.1 If in the PR description, the author mentions that they have tested the changes, lower the risk level.
                         2.2 If the PR is small and contains minimal changes, lower the risk level.
                         2.3 If the PR contains unit tests or integration tests, lower the risk level.
@@ -172,7 +191,7 @@ const checkForNewPullRequests = async () => {
                 console.log(chalk.magenta('Code Review:\n'), codeReview);
 
                 // Extract risk level from the OpenAI response
-                const riskLevelMatch = codeReview.match(/\*\*Risk Level\s?:\s?\*\*\s*(.*)/i);
+                const riskLevelMatch = codeReview.match(/Risk Level\s?:\s?\s*(.*)/i);
                 const riskLevel = riskLevelMatch ? riskLevelMatch[1].toLowerCase().trim() : 'unknown';
 
                 console.log(chalk.yellowBright(`Pull Request URL: ${pr.url}`));
