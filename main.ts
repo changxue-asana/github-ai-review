@@ -105,11 +105,11 @@ const getCodeReviewFromOpenAI = async (title: string, body: string, diff: string
                     2. Assess the risk level of the PR based on the impact of the changes, using the following scale: very low, low, medium-low, medium, medium-high, high, very high. Identify and highlight any risky code changes. Output the risk level as **Risk Level:** [level].
                         2.1 If in the PR description, the author mentions that they have tested the changes, lower the risk level.
                         2.2 If the PR is small and contains minimal changes, lower the risk level.
-                        2.3 If this PR is for bootcamp tasks under /learning_playground folder, lower the risk level unless some crucial issues.
-                    3. Evaluate whether the PR has sufficient test coverage; if it does, this should help reduce the risk level.
-
-                    If the PR contains potential bugs, please highlight them in a designated 'Bug' section.
-                    Show only highly relevant suggestions and improvements in the 'Improvement' section.
+                        2.3 If the PR contains unit tests or integration tests, lower the risk level.
+                        2.4 If this PR is for bootcamp tasks under /learning_playground folder, lower the risk level unless some crucial issues.
+                    3. If the PR is missing any context for determining the risk level, highlight it and ask for more information. Also increase the risk level accordingly if the context is crucial for risk level assessment.
+                    4. If the PR contains potential bugs, please highlight them in a designated 'Bug' section.
+                    5. Show only highly relevant suggestions and improvements in the 'Improvement' section.
 
                     PR Title:
                     ${title}
