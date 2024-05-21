@@ -127,7 +127,7 @@ const getCodeReviewFromOpenAI = async (title: string, body: string, diff: string
                         2.3 If the PR contains unit tests or integration tests, lower the risk level.
                         2.4 If this PR is for bootcamp tasks under /learning_playground folder, lower the risk level unless some crucial issues.
                         2.5 If the PR is related to documentation, lower the risk level.
-                        2.6 If the PR involves refactoring or code cleanup, reduce the risk level further, unless critical issues are identified.
+                        2.6 If the PR is about refactoring or code cleanup, reduce the risk level by one level unless critical issues are identified.
                     3. If the PR is missing any context for determining the risk level, highlight it and ask for more information. Also increase the risk level accordingly if the context is extremely crucial for risk level assessment.
                     4. If the PR contains potential bugs, please highlight them in a designated 'Bug' section.
                     5. Show only highly relevant suggestions and improvements in the 'Improvement' section.
